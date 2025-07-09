@@ -1,0 +1,7 @@
+需要添加以下明星头像图片文件：
+
+1. wanglihong.jpg - 王力宏头像
+2. yangmi.jpg - 杨幂头像  
+3. zhoujielun.jpg - 周杰伦头像
+
+建议尺寸：100x100px，格式：JPG或PNG 

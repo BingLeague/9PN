@@ -1,0 +1,69 @@
+{
+	"pages": [
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "名秘九宫",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/invite/list",
+			"style": {
+				"navigationBarTitleText": "邀请列表"
+			}
+		},
+		{
+			"path": "pages/history/list",
+			"style": {
+				"navigationBarTitleText": "解码历史"
+			}
+		},
+		{
+			"path": "pages/test/menu",
+			"style": {
+				"navigationBarTitleText": "菜单测试"
+			}
+		},
+		{
+			"path": "pages/test/stroke-test",
+			"style": {
+				"navigationBarTitleText": "笔画查询测试"
+			}
+		},
+		{
+			"path": "pages/decrypt/single",
+			"style": {
+				"navigationBarTitleText": "姓名解码"
+			}
+		}
+	,{
+    "path": "uni_modules/uni-pay/pages/success/success",
+    "style": {
+        "backgroundColor": "#F8F8F8",
+        "navigationBarTitleText": "支付成功"
+    }
+}
+,{
+    "path": "uni_modules/uni-pay/pages/ad-interactive-webview/ad-interactive-webview",
+    "style": {
+        "backgroundColor": "#F8F8F8",
+        "navigationBarTitleText": "ad"
+    }
+}
+,{
+    "path": "uni_modules/uni-pay/pages/pay-desk/pay-desk",
+    "style": {
+        "backgroundColor": "#F8F8F8",
+        "navigationBarTitleText": "收银台"
+    }
+}
+],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "名秘九宫",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	},
+	"uniIdRouter": {}
+}
