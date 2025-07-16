@@ -36,6 +36,12 @@
 			"style": {
 				"navigationBarTitleText": "姓名解码"
 			}
+		},
+		{
+			"path": "pages/decrypt/deep",
+			"style": {
+				"navigationBarTitleText": "深度解读"
+			}
 		}
 	,{
     "path": "uni_modules/uni-pay/pages/success/success",

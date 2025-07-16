@@ -12,7 +12,7 @@
         <text class="label">姓名</text>
         <input 
           v-model="formData.name" 
-          placeholder="请输入姓名（如：张三）" 
+          placeholder="请输入姓名（如：刘德华）" 
           class="input"
           maxlength="10"
           @input="onNameInput"
@@ -32,10 +32,6 @@
             {{ formData.birthday || '请选择出生日期' }}
           </view>
         </picker>
-        <view class="lunar-switch">
-          <text class="lunar-label">阴历</text>
-          <switch :checked="formData.isLunar" @change="onLunarChange" color="#4a90e2" />
-        </view>
       </view>
 
       <button @click="calculateStrokes" class="submit-btn" :disabled="!canSubmit">
@@ -97,34 +93,15 @@
             <text class="palace-num">{{ palaceAnalysis.ming.num }}</text>
           </view>
         </view>
-        <view class="shengke-section">
-          <text class="detail-title">五行生克关系</text>
-          <view class="shengke-list">
-            <view class="shengke-item">
-              <text>父母宫与疾恶宫：{{ palaceAnalysis.fumu.wuxing }} - {{ palaceAnalysis.jiee.wuxing }}
-                <span v-if="palaceAnalysis.shengke.fumu_jiee">（{{ palaceAnalysis.shengke.fumu_jiee }}）</span>
-              </text>
-            </view>
-            <view class="shengke-item">
-              <text>疾恶宫与奴仆宫：{{ palaceAnalysis.jiee.wuxing }} - {{ palaceAnalysis.nupu.wuxing }}
-                <span v-if="palaceAnalysis.shengke.jiee_nupu">（{{ palaceAnalysis.shengke.jiee_nupu }}）</span>
-              </text>
-            </view>
-            <view class="shengke-item">
-              <text>气化五行（夫妻宫）：{{ palaceAnalysis.jiee.qihuaWuxing }} - {{ palaceAnalysis.nupu.qihuaWuxing }}
-                <span v-if="palaceAnalysis.shengke.qihua_jiee_nupu">（{{ palaceAnalysis.shengke.qihua_jiee_nupu }}）</span>
-              </text>
-            </view>
-          </view>
-        </view>
       </view>
 
       <!-- 生日信息 -->
       <view class="birthday-detail" v-if="formData.birthday">
         <text class="detail-title">生日信息</text>
         <view class="birthday-info">
-          <text class="birthday-text">{{ formData.birthday }}</text>
-          <text class="age-text">年龄：{{ calculatedAge }}岁</text>
+          <text class="birthday-text">出生日期：{{ formData.birthday }}</text>
+          <text class="age-text">九宫年龄：{{ calculatedAge.toFixed(1) }}岁</text>
+          <text class="age-tip">（按九宫姓名学理论，人在出生前0.5年即为人，故年龄+0.5）</text>
         </view>
       </view>
 
@@ -153,6 +130,8 @@
       </button>
     </view>
   </view>
+  <!-- uni-pay 组件 -->
+  <uni-pay ref="payRef" v-if="showPayPopup" @success="onPaySuccess" @fail="onPayFail" @cancel="onPayCancel" />
 </template>
 
 <script>
@@ -162,6 +141,7 @@ import {
   getUnknownChars,
   getNamePalaceAnalysis
 } from '../../static/js/kxz-stroke-utils.js';
+import uniPay from 'uni_modules/uni-pay/components/uni-pay/uni-pay.vue';
 
 // 五行分配通用规则
 const wuxingMap = [
@@ -194,12 +174,14 @@ const keMap = {
 };
 
 export default {
+  components: {
+    uniPay
+  },
   data() {
     return {
       formData: {
         name: '',
-        birthday: '',
-        isLunar: false
+        birthday: ''
       },
       strokeResult: [],
       totalStrokes: 0,
@@ -207,6 +189,16 @@ export default {
       unknownChars: [],
       calculatedAge: 0,
       palaceAnalysis: null,
+      showPayPopup: false, // 仍用于控制弹窗显示
+      payOptions: {
+        // 按 uni-pay 组件参数格式
+        total_fee: 1990, // 单位分，19.9元
+        title: '姓名五行命盘深度解读', // 商品名称
+        order_no: '', // 订单号（建议后端生成，前端可用时间戳+随机数临时生成）
+        // provider: 'wxpay', // uni-pay 可自动选择渠道
+        // 其它参数可按uni-pay文档补充
+      },
+
     }
   },
   computed: {
@@ -225,9 +217,6 @@ export default {
     onBirthdayChange(e) {
       this.formData.birthday = e.detail.value;
       this.calculateAge();
-    },
-    onLunarChange(e) {
-      this.formData.isLunar = e.detail.value;
     },
     queryStrokes() {
       try {
@@ -275,6 +264,7 @@ export default {
         this.calculatedAge = 0;
         return;
       }
+      
       const birthDate = new Date(this.formData.birthday);
       const today = new Date();
       let age = today.getFullYear() - birthDate.getFullYear();
@@ -282,7 +272,9 @@ export default {
       if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
         age--;
       }
-      this.calculatedAge = age;
+      
+            // 根据九宫姓名学理论，年龄加上0.5岁（人在出生前0.5年即为人）
+      this.calculatedAge = age + 0.5;
     },
     clearResults() {
       this.strokeResult = [];
@@ -292,25 +284,59 @@ export default {
       this.palaceAnalysis = null;
     },
     goToNinePalace() {
+      console.log('goToNinePalace called');
       // 保存数据到本地存储，供深度解读页面使用
       const analysisData = {
         name: this.formData.name,
         birthday: this.formData.birthday,
-        isLunar: this.formData.isLunar,
         strokes: this.strokeResult,
         totalStrokes: this.totalStrokes,
-        age: this.calculatedAge,
-        palaceInfo: this.palaceAnalysis, // 使用新的palaceAnalysis
-        shengkeInfo: [], // 移除旧的shengkeInfo
+        age: this.calculatedAge, // 九宫年龄
+        palaceInfo: this.palaceAnalysis,
         timestamp: Date.now()
       };
       uni.setStorageSync('currentAnalysis', analysisData);
-      // 跳转到深度解读页面（后续开发）
-      uni.showToast({
-        title: '请先完成支付',
-        icon: 'none'
+      
+      // 先尝试直接跳转到深度解读页面（临时方案）
+      console.log('Attempting to navigate to deep page');
+      uni.navigateTo({ 
+        url: '/pages/decrypt/deep',
+        success: () => {
+          console.log('Navigation successful');
+        },
+        fail: (err) => {
+          console.error('Navigation failed:', err);
+          // 如果跳转失败，尝试支付流程
+          this.showPayPopup = true;
+          this.$nextTick(() => {
+            if (this.$refs.payRef) {
+              console.log('Opening payment popup');
+              this.$refs.payRef.open(this.payOptions);
+            } else {
+              console.error('payRef not found');
+              uni.showToast({
+                title: '支付组件未找到',
+                icon: 'none'
+              });
+            }
+          });
+        }
       });
-    }
+    },
+    // uni-pay 组件事件名通常为 success/fail/cancel
+    onPaySuccess(res) {
+      this.showPayPopup = false;
+      uni.showToast({ title: '支付成功', icon: 'success' });
+      uni.navigateTo({ url: '/pages/decrypt/deep' });
+    },
+    onPayFail(err) {
+      this.showPayPopup = false;
+      uni.showToast({ title: '支付失败', icon: 'none' });
+    },
+    onPayCancel(err) {
+      this.showPayPopup = false;
+      uni.showToast({ title: '已取消支付', icon: 'none' });
+    },
   }
 }
 </script>
@@ -526,7 +552,17 @@ export default {
 .age-text {
   font-size: 14px;
   color: #666;
+  font-weight: bold;
 }
+
+.age-tip {
+  font-size: 12px;
+  color: #999;
+  display: block;
+  margin-top: 3px;
+}
+
+
 
 .calculation-status {
   margin-bottom: 20px;
@@ -616,16 +652,7 @@ export default {
 .next-btn:active {
   transform: scale(0.98);
 }
-.lunar-switch {
-  display: flex;
-  align-items: center;
-  margin-top: 8px;
-}
-.lunar-label {
-  font-size: 14px;
-  color: #666;
-  margin-right: 8px;
-}
+
 .palace-section {
   background: #f8f6e8;
   border-radius: 12px;
@@ -663,19 +690,5 @@ export default {
   font-size: 13px;
   color: #666;
 }
-.shengke-section {
-  margin-top: 10px;
-}
-.shengke-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.shengke-item {
-  background: #eaf2f8;
-  border-radius: 6px;
-  padding: 6px 10px;
-  font-size: 13px;
-  color: #357abd;
-}
+
 </style> 

@@ -10,7 +10,7 @@
         </view>
       </view>
       <image src="/static/logo.png" class="logo"></image>
-      <text class="title">名秘九宫</text>
+      <text class="title">名秘·九宫</text>
       <text class="subtitle">科学姓名解码专家</text>
     </view>
 
